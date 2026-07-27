@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Конструктор визиток</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg-page:#F0ECE4;--surface:#FFFFFF;--border:rgba(30,30,30,0.12);--ink:#1A1A1A;--muted:#767676;--accent:#4A6FA5;--danger:#C1121F}
+  body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-page);color:var(--ink);min-height:100vh}
+
+  header{padding:20px 28px 0}
+  header h1{font-size:18px;font-weight:700}
+  header p{font-size:13px;color:var(--muted);margin-top:4px}
+
+  .scenario-tabs{display:flex;gap:8px;margin:18px 28px 0}
+  .scenario-tabs button{flex:1;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);
+    font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s}
+  .scenario-tabs button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .layout{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:340px 1fr;gap:28px;align-items:start;padding:20px 28px 60px}
+  @media (max-width:860px){.layout{grid-template-columns:1fr}}
+
+  .panel{background:var(--surface);border-radius:14px;padding:22px;border:1px solid var(--border)}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:6px}
+  .field input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;
+    background:#fff;color:var(--ink);outline:none;font-family:inherit}
+  .field input[type=text]:focus{border-color:var(--accent)}
+
+  .font-picker{display:flex;flex-wrap:wrap;gap:6px}
+  .font-swatch{padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:13px;
+    cursor:pointer;color:var(--ink)}
+  .font-swatch.active{border-color:var(--ink);background:#F5F5F5;font-weight:600}
+
+  .seg-picker{display:flex;gap:6px}
+  .seg-opt{flex:1;padding:9px;border:1px solid var(--border);border-radius:8px;background:#fff;font-family:inherit;
+    font-size:12px;cursor:pointer;color:var(--muted)}
+  .seg-opt.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .accent-picker{display:flex;gap:8px}
+  .accent-swatch{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .12s}
+  .accent-swatch:hover{transform:scale(1.1)}
+  .accent-swatch.active{border-color:var(--ink);box-shadow:0 0 0 2px #fff inset}
+
+  .crop-widget{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+  .crop-stage{position:relative;overflow:hidden;background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 0/16px 16px;
+    border:1px solid var(--border);border-radius:8px;touch-action:none;cursor:grab}
+  .crop-stage:active{cursor:grabbing}
+  .crop-img{position:absolute;left:0;top:0;user-select:none;pointer-events:none}
+  .crop-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;
+    font-size:11px;color:var(--muted);padding:8px}
+  .crop-controls{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+  .crop-zoom-label{display:flex;align-items:center;gap:6px}
+  .crop-file{font-size:11px;max-width:150px}
+  .crop-clear{border:1px solid var(--border);background:#fff;border-radius:6px;padding:5px 8px;font-size:11px;cursor:pointer}
+  .crop-clear:disabled,.crop-zoom:disabled{opacity:.4;cursor:not-allowed}
+
+  .previews{display:flex;flex-direction:column;gap:20px}
+  .preview-section h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px}
+  .card-frame{max-width:480px;border-radius:10px;overflow:hidden;box-shadow:0 12px 32px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.08)}
+  .card-svg{display:block;width:100%;height:auto}
+
+  .export-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-top:8px}
+  .rgb-warning{font-size:12.5px;line-height:1.5;color:var(--danger);background:rgba(193,18,31,.08);
+    border:1px solid rgba(193,18,31,.25);border-radius:8px;padding:10px 12px;margin-bottom:14px}
+  #btn-export{width:100%;padding:13px;border:none;border-radius:9px;background:var(--ink);color:#fff;
+    font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+  #btn-export:disabled{opacity:.4;cursor:not-allowed}
+  #export-hint{font-size:12px;color:var(--muted);margin-top:8px;min-height:14px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Конструктор визиток</h1>
+  <p>Три сценария, готовые шаблоны, экспорт в векторный PDF под печать 90×50&nbsp;мм. Без бэкенда, всё в браузере.</p>
+</header>
+
+<div class="scenario-tabs">
+  <button data-scenario-tab="personal" class="active">Личная</button>
+  <button data-scenario-tab="networking">Нетворкинг</button>
+  <button data-scenario-tab="project">Проект / хобби</button>
+</div>
+
+<div class="layout">
+  <div class="panel">
+    <div id="form-fields"></div>
+  </div>
+
+  <div class="previews">
+    <div class="preview-section">
+      <h3>Лицевая сторона</h3>
+      <div class="card-frame"><div id="preview-front"></div></div>
+    </div>
+    <div class="preview-section" id="preview-back-wrap">
+      <h3>Оборот</h3>
+      <div class="card-frame"><div id="preview-back"></div></div>
+    </div>
+
+    <div class="export-box">
+      <div class="rgb-warning">Цвета в PDF — RGB. Для точной цветопередачи при печати конвертируйте файл в CMYK перед отправкой в типографию.</div>
+      <button id="btn-export" disabled>Скачать PDF</button>
+      <div id="export-hint"></div>
+    </div>
+  </div>
+</div>
+
+<script src="fonts/font-data.js?v=5"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=5"></script>
+<script src="js/qrcode-generator.js?v=5"></script>
+<script src="js/validate.js?v=5"></script>
+<script src="js/fonts-setup.js?v=5"></script>
+<script src="js/qr-helper.js?v=5"></script>
+<script src="js/crop-control.js?v=5"></script>
+<script src="js/templates/personal.js?v=5"></script>
+<script src="js/templates/networking.js?v=5"></script>
+<script src="js/templates/project.js?v=5"></script>
+<script src="js/app.js?v=5"></script>
+</body>
+</html>
